@@ -138,7 +138,7 @@ try {
       const result = await runCase(browser, testCase, strategy);
       const [host, remote] = testCase.expected[strategy];
       const pass =
-        result.hostReact === host && result.remoteReact === remote && result.errors.length === 0;
+        result.hostReact === host && result.remoteReact === remote && result.hooksWork && result.errors.length === 0;
       rows.push({ ...testCase, strategy, ...result, pass });
       console.log(`${pass ? 'PASS' : 'FAIL'}  ${testCase.name} (${strategy})`, result);
     }

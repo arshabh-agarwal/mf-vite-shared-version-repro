@@ -6,7 +6,9 @@
   "scripts": {
     "build": "pnpm -r build",
     "start": "pnpm -r --parallel preview",
-    "matrix": "node run-matrix.mjs"
+    "matrix": "node run-matrix.mjs",
+    "matrix:dev": "node run-matrix-dev.mjs",
+    "dev": "pnpm -r --parallel exec vite --force"
   },
   "devDependencies": {
     "playwright": "^1.64.1"

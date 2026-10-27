@@ -4,6 +4,7 @@ import { federation } from '@module-federation/vite';
 const requiredVersion = process.env.REMOTE_REQUIRED_VERSION ?? '^19.0.0';
 
 export default defineConfig({
+  server: { origin: 'http://localhost:4174', cors: true },
   preview: { port: 4174, strictPort: true, cors: true },
   base: 'http://localhost:4174/',
   plugins: [
