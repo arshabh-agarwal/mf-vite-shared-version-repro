@@ -1,0 +1,10 @@
+{
+  "name": "mf-vite-shared-version-repro",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "start": "pnpm -r --parallel preview"
+  }
+}
