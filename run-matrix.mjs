@@ -66,14 +66,35 @@ function installReact(pkg, version) {
   run('pnpm', ['--filter', pkg, 'add', `react@${version}`, `react-dom@${version}`]);
 }
 
-async function waitFor(url) {
+async function isServing(url) {
+  try {
+    return (await fetch(url)).ok;
+  } catch {
+    return false;
+  }
+}
+
+// Starts `vite preview` in `dir` and resolves once `url` answers. Rejects if the port is already
+// taken, so a case never reads a page served from another case's build.
+async function startPreview(dir, url) {
+  if (await isServing(url)) throw new Error(`${url} is already in use`);
+  const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview'], {
+    cwd: dir,
+    stdio: 'ignore',
+  });
+  const exited = new Promise((resolve) => server.once('exit', resolve));
   for (let i = 0; i < 100; i++) {
-    try {
-      if ((await fetch(url)).ok) return;
-    } catch {}
+    if (server.exitCode !== null) throw new Error(`vite preview in ${dir} exited early`);
+    if (await isServing(url)) return { server, exited };
     await new Promise((r) => setTimeout(r, 200));
   }
+  server.kill();
   throw new Error(`${url} did not start`);
+}
+
+async function stopPreview({ server, exited }) {
+  server.kill();
+  await exited;
 }
 
 async function runCase(browser, { host, remote }, strategy) {
@@ -87,12 +108,11 @@ async function runCase(browser, { host, remote }, strategy) {
   run('pnpm', ['--filter', 'mf-repro-remote', 'build'], env);
   run('pnpm', ['--filter', 'mf-repro-host', 'build'], env);
 
-  const servers = ['host', 'remote'].map((dir) =>
-    spawn('pnpm', ['exec', 'vite', 'preview'], { cwd: dir, stdio: 'ignore', detached: true })
-  );
+  const servers = [
+    await startPreview('remote', 'http://localhost:4174/mf-manifest.json'),
+    await startPreview('host', 'http://localhost:4173'),
+  ];
   try {
-    await waitFor('http://localhost:4173');
-    await waitFor('http://localhost:4174/mf-manifest.json');
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -106,7 +126,7 @@ async function runCase(browser, { host, remote }, strategy) {
     await page.close();
     return { ...result, errors };
   } finally {
-    for (const server of servers) process.kill(-server.pid, 'SIGTERM');
+    await Promise.all(servers.map(stopPreview));
   }
 }
 
