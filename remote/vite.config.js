@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import { federation } from '@module-federation/vite';
 
+const requiredVersion = process.env.REMOTE_REQUIRED_VERSION ?? '^19.0.0';
+
 export default defineConfig({
   preview: { port: 4174, strictPort: true, cors: true },
   base: 'http://localhost:4174/',
@@ -10,10 +12,11 @@ export default defineConfig({
       filename: 'remoteEntry.js',
       manifest: true,
       dts: false,
+      shareStrategy: process.env.SHARE_STRATEGY ?? 'version-first',
       exposes: { './App': './src/App.js' },
       shared: {
-        react: { singleton: false, requiredVersion: '^19.0.0' },
-        'react-dom': { singleton: false, requiredVersion: '^19.0.0' },
+        react: { singleton: false, requiredVersion },
+        'react-dom': { singleton: false, requiredVersion },
       },
     }),
   ],
